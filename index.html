@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Selamat Ulang Tahun - Special Celebration</title>
+
+<!-- Library Three.js untuk Render WebGL 3D -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500&family=Manrope:wght@300;400;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --ink: #0d0a1a;
+    --bg-gradient: radial-gradient(circle at 50% 30%, #1e1838 0%, #0d0a1a 70%, #05040a 100%);
+    --gold: #cda45e;
+    --gold-light: #e8cf9c;
+    --emerald: #163a30;
+    --ivory: #f3ecdd;
+    --ivory-dim: #b9b2a4;
+    --card-bg: rgba(255, 255, 255, 0.04);
+    --border-color: rgba(205, 164, 94, 0.35);
+  }
+
+  body.theme-blue {
+    --ink: #071326;
+    --bg-gradient: radial-gradient(circle at 50% 30%, #142c52 0%, #071326 70%, #020710 100%);
+    --gold: #4a90e2;
+    --gold-light: #a6c8f0;
+    --emerald: #1a2a3a;
+    --border-color: rgba(74, 144, 226, 0.4);
+  }
+
+  body.theme-pink {
+    --ink: #1a0a14;
+    --bg-gradient: radial-gradient(circle at 50% 30%, #3d122b 0%, #1a0a14 70%, #0a0308 100%);
+    --gold: #e57373;
+    --gold-light: #f8bbd0;
+    --emerald: #3a1a24;
+    --border-color: rgba(229, 115, 115, 0.4);
+  }
+
+  body.theme-emerald {
+    --ink: #061810;
+    --bg-gradient: radial-gradient(circle at 50% 30%, #0f3d29 0%, #061810 70%, #020a06 100%);
+    --gold: #2e7d32;
+    --gold-light: #a5d6a7;
+    --emerald: #0d2818;
+    --border-color: rgba(46, 125, 50, 0.4);
+  }
+
+  html, body {
+    background: var(--bg-gradient);
+    background-attachment: fixed;
+    color: var(--ivory);
+    font-family: 'Manrope', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+    transition: background 0.8s ease, color 0.5s ease;
+  }
+
+  .bg-glow {
+    position: fixed;
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(205, 164, 94, 0.12) 0%, rgba(0,0,0,0) 70%);
+    top: -150px;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 0;
+    animation: pulseGlow 8s infinite alternate ease-in-out;
+  }
+
+  @keyframes pulseGlow {
+    0% { transform: translateX(-50%) scale(0.85); opacity: 0.6; }
+    100% { transform: translateX(-50%) scale(1.25); opacity: 1; }
+  }
+
+  #fireworks-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  #device-clock {
+    position: fixed;
+    top: 14px;
+    right: 16px;
+    z-index: 60;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--gold-light);
+    background: rgba(13,10,26,0.7);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-variant-numeric: tabular-nums;
+    backdrop-filter: blur(6px);
+  }
+
+  .theme-switcher {
+    position: fixed;
+    top: 14px;
+    left: 64px;
+    z-index: 60;
+    display: flex;
+    gap: 6px;
+    background: rgba(13,10,26,0.7);
+    border: 1px solid var(--border-color);
+    padding: 5px 8px;
+    border-radius: 20px;
+    backdrop-filter: blur(6px);
+  }
+
+  .theme-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.2);
+    transition: transform 0.2s ease;
+  }
+  .theme-dot:hover { transform: scale(1.2); }
+  .dot-gold { background: #cda45e; }
+  .dot-blue { background: #4a90e2; }
+  .dot-pink { background: #e57373; }
+  .dot-emerald { background: #2e7d32; }
+
+  #gate {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    background: var(--bg-gradient);
+    perspective: 1600px;
+    text-align: center;
+    padding: 6vh 6vw;
+    transition: opacity 0.8s ease;
+  }
+  #gate.hide { opacity: 0; pointer-events: none; }
+
+  .gate-eyebrow { font-size: 11px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--ivory-dim); }
+  .gate-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    color: var(--gold-light);
+    max-width: 480px;
+  }
+
+  .doors { position: relative; width: 220px; height: 260px; transform-style: preserve-3d; }
+  .door {
+    position: absolute;
+    top: 0; width: 110px; height: 100%;
+    background: linear-gradient(160deg, #241a12, #17110c);
+    border: 1px solid var(--border-color);
+    transform-style: preserve-3d;
+    transition: transform 1.1s cubic-bezier(.6,.1,.3,1);
+    box-shadow: inset 0 0 0 6px rgba(205,164,94,0.06);
+  }
+  .door-left { left: 0; transform-origin: left center; border-radius: 6px 0 0 6px; }
+  .door-right { right: 0; transform-origin: right center; border-radius: 0 6px 6px 0; }
+  .door.open.door-left { transform: rotateY(-108deg); }
+  .door.open.door-right { transform: rotateY(108deg); }
+
+  .seal {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 76px; height: 76px;
+    margin: -38px 0 0 -38px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--gold-light), var(--gold) 60%, #8a6a34 100%);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+    z-index: 2;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .seal.fade { opacity: 0; transform: scale(0.6); }
+
+  .countdown { display: flex; gap: 18px; justify-content: center; }
+  .cd-unit { display: flex; flex-direction: column; align-items: center; min-width: 58px; }
+  .cd-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    color: var(--gold-light);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .cd-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ivory-dim); margin-top: 6px; }
+  .gate-note { font-size: 12px; color: var(--ivory-dim); letter-spacing: 0.04em; }
+
+  .frame {
+    position: relative;
+    z-index: 10;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 8vh 6vw 10vh;
+    text-align: center;
+    background: transparent;
+  }
+
+  .ornament-line {
+    width: 1px; height: 46px;
+    background: linear-gradient(var(--gold), transparent);
+    margin: 0 auto 22px; opacity: 0.8;
+  }
+  .eyebrow { font-size: 12px; letter-spacing: 0.35em; text-transform: uppercase; color: var(--gold-light); opacity: 0; }
+  body.revealed .eyebrow { animation: fadeUp 1s ease forwards 0.15s; }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: clamp(2.2rem, 5.5vw, 4.4rem);
+    line-height: 1.15;
+    margin: 18px auto 6px;
+    letter-spacing: 0.01em;
+    max-width: 900px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  h1 .name {
+    display: inline-block; font-style: italic; color: var(--gold);
+    background: linear-gradient(120deg, var(--gold-light), var(--gold) 40%, var(--gold-light) 80%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  h1 span.letter { display: inline-block; opacity: 0; transform: translateY(0.4em) rotateX(60deg); }
+  body.revealed h1 span.letter { animation: letterIn 0.7s cubic-bezier(.2,.8,.2,1) forwards; }
+
+  .tagline {
+    font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+    color: var(--ivory-dim); max-width: 540px;
+    margin: 10px auto 30px; opacity: 0; font-weight: 300; line-height: 1.6;
+  }
+  body.revealed .tagline { animation: fadeUp 1s ease forwards 0.3s; }
+
+  .personal-quote {
+    max-width: 580px;
+    padding: 24px 30px;
+    margin: 0 auto 40px;
+    border-left: 2px solid var(--gold);
+    background: var(--card-bg);
+    backdrop-filter: blur(8px);
+    border-radius: 0 14px 14px 0;
+    text-align: left;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--ivory);
+    line-height: 1.7;
+    opacity: 0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+  body.revealed .personal-quote { animation: fadeUp 1s ease forwards 0.45s; }
+  .personal-quote .author {
+    display: block;
+    margin-top: 10px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 0.8rem;
+    font-style: normal;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold-light);
+  }
+
+  .gallery-container {
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto 40px;
+    position: relative;
+    opacity: 0;
+  }
+  body.revealed .gallery-container { animation: fadeUp 1.1s ease forwards 0.6s; }
+
+  .gallery-slider {
+    position: relative;
+    width: 100%;
+    height: 380px;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    background: #141118;
+    touch-action: pan-y;
+  }
+
+  .gallery-track {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  .gallery-slide { min-width: 100%; height: 100%; position: relative; }
+  .gallery-slide img { width: 100%; height: 100%; object-fit: cover; }
+
+  .gallery-caption {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 20px 16px 12px;
+    background: linear-gradient(transparent, rgba(13, 10, 26, 0.95));
+    font-size: 12.5px; color: var(--ivory); letter-spacing: 0.03em;
+  }
+
+  .gallery-btn {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(13,10,26,0.7); border: 1px solid var(--border-color);
+    color: var(--gold-light); display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 4; transition: background 0.2s;
+  }
+  .gallery-btn:hover { background: var(--gold); color: var(--ink); }
+  .gallery-btn.prev { left: 10px; }
+  .gallery-btn.next { right: 10px; }
+
+  .gallery-dots { display: flex; justify-content: center; gap: 8px; margin-top: 14px; }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    cursor: pointer; transition: background 0.3s, transform 0.3s;
+  }
+  .dot.active { background: var(--gold); transform: scale(1.3); }
+
+  .cake-stage {
+    width: 280px; height: 260px;
+    margin-bottom: 20px;
+    perspective: 1000px; opacity: 0;
+    position: relative;
+  }
+  body.revealed .cake-stage { animation: fadeUp 1.2s ease forwards 0.75s; }
+
+  .cake {
+    position: relative; width: 100%; height: 100%;
+    transform-style: preserve-3d;
+    animation: rotateCake 14s linear infinite;
+    transform: rotateX(-14deg);
+  }
+
+  .tier { position: absolute; left: 50%; transform-style: preserve-3d; border-radius: 6px; }
+  .tier .face { position: absolute; inset: 0; border-radius: 6px; border: 1px solid rgba(232,207,156,0.25); }
+
+  .tier-bottom { bottom: 20px; width: 190px; height: 78px; margin-left: -95px; }
+  .tier-top { bottom: 96px; width: 130px; height: 62px; margin-left: -65px; }
+
+  .tier-bottom .face-front { background: linear-gradient(180deg,#3a1f28,#26141b); transform: translateZ(47px); }
+  .tier-bottom .face-back { background: #1c0f14; transform: translateZ(-47px) rotateY(180deg); }
+  .tier-bottom .face-right { width:94px; background:#2c1720; transform: rotateY(90deg) translateZ(95px); left: 48px;}
+  .tier-bottom .face-left { width:94px; background:#2c1720; transform: rotateY(-90deg) translateZ(95px); left: 48px;}
+
+  .tier-top .face-front { background: linear-gradient(180deg,#4a2c39,#331d27); transform: translateZ(31px); }
+  .tier-top .face-back { background: #241319; transform: translateZ(-31px) rotateY(180deg); }
+  .tier-top .face-right { width:62px; background:#361f28; transform: rotateY(90deg) translateZ(64px); left: 34px;}
+  .tier-top .face-left { width:62px; background:#361f28; transform: rotateY(-90deg) translateZ(64px); left: 34px;}
+
+  .icing { position: absolute; left: 0; right: 0; height: 14px; background: linear-gradient(180deg, var(--gold-light), var(--gold)); border-radius: 3px; }
+  .tier-bottom .icing { top: -7px; }
+  .tier-top .icing { top: -7px; }
+
+  .candle {
+    position: absolute; bottom: 158px; left: 50%;
+    width: 8px; height: 46px; margin-left: -4px;
+    background: linear-gradient(180deg, var(--ivory), var(--gold-light));
+    border-radius: 2px; transform: translateZ(20px);
+  }
+  .flame {
+    position: absolute; top: -18px; left: 50%;
+    width: 12px; height: 18px; margin-left: -6px;
+    background: radial-gradient(circle at 50% 30%, #fff2c2, #f5a623 55%, #d94f1f 90%);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    animation: flicker 0.6s ease-in-out infinite alternate;
+  }
+  .flame.blown { opacity: 0; transform: scale(0.2); transition: opacity 0.4s ease, transform 0.4s ease; animation: none; }
+
+  .candle-hit {
+    position: absolute; bottom: 140px; left: 50%;
+    width: 80px; height: 90px; margin-left: -40px;
+    transform: translateZ(20px); cursor: pointer; z-index: 10;
+  }
+  .blow-hint {
+    font-size: 11px; letter-spacing: 0.1em; color: var(--gold-light);
+    margin-bottom: 34px; opacity: 0; animation: hintBob 1.8s ease-in-out infinite;
+  }
+  body.revealed .blow-hint { animation: fadeUp 1s ease forwards 0.9s, hintBob 1.8s ease-in-out infinite 1.9s; }
+
+  .smoke {
+    position: absolute; top: 130px; left: 50%; width: 6px; height: 6px;
+    margin-left: -3px; background: rgba(200,200,200,0.6); border-radius: 50%;
+    opacity: 0; pointer-events: none; z-index: 11;
+  }
+  .smoke.rise { animation: smokeRise 2s ease-out forwards; }
+
+  @keyframes smokeRise {
+    0% { opacity: 0.8; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-60px) scale(4); }
+  }
+
+  .stats-section { margin-top: 30px; width: 100%; max-width: 800px; opacity: 0; }
+  body.revealed .stats-section { animation: fadeUp 1s ease forwards 1.1s; }
+
+  .stats-title { font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--ivory-dim); margin-bottom: 16px; }
+  .stats-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .stat-chip {
+    padding: 14px 10px; 
+    min-width: 120px;
+    flex: 1 1 130px;
+    max-width: 150px;
+    border-radius: 12px; 
+    border: 1px solid var(--border-color);
+    background: var(--card-bg); 
+    backdrop-filter: blur(6px);
+    box-sizing: border-box;
+  }
+  .stat-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.1rem, 2vw, 1.4rem);
+    color: var(--gold-light); 
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .stat-lbl { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ivory-dim); margin-top: 4px; }
+
+  .next-bday-section { margin-top: 40px; opacity: 0; }
+  body.revealed .next-bday-section { animation: fadeUp 1s ease forwards 1.3s; }
+
+  .guestbook { margin-top: 50px; width: 100%; max-width: 480px; opacity: 0; }
+  body.revealed .guestbook { animation: fadeUp 1s ease forwards 1.5s; }
+
+  .guestbook-title { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.5rem; color: var(--gold-light); margin-bottom: 16px; }
+  .gb-form { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+  .gb-form input, .gb-form textarea {
+    width: 100%; padding: 12px 16px; border-radius: 10px;
+    border: 1px solid var(--border-color); background: rgba(255,255,255,0.03);
+    color: var(--ivory); font-family: 'Manrope', sans-serif; font-size: 13.5px;
+  }
+  .gb-form textarea { min-height: 70px; resize: none; }
+  .gb-form input:focus, .gb-form textarea:focus { outline: none; border-color: var(--gold); }
+
+  .gb-submit {
+    align-self: center; padding: 10px 30px; border-radius: 20px;
+    border: 1px solid var(--gold); background: linear-gradient(120deg, rgba(205,164,94,0.2), rgba(232,207,156,0.08));
+    color: var(--gold-light); font-family: 'Manrope', sans-serif; font-size: 12px;
+    letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: transform 0.2s, background 0.2s;
+  }
+  .gb-submit:hover { transform: translateY(-2px); background: var(--gold); color: var(--ink); }
+
+  .gb-list { display: flex; flex-direction: column; gap: 12px; text-align: left; max-height: 280px; overflow-y: auto; padding-right: 4px; }
+  .gb-empty { text-align: center; font-size: 13px; color: var(--ivory-dim); font-style: italic; }
+  .gb-item { padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--card-bg); }
+  .gb-item-name { font-size: 13px; color: var(--gold-light); font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .gb-item-time { font-size: 10px; color: var(--ivory-dim); font-weight: 300; }
+  .gb-item-msg { font-size: 13px; color: var(--ivory); line-height: 1.5; }
+
+  .footer-note { margin-top: 56px; font-size: 12px; letter-spacing: 0.08em; color: var(--ivory-dim); opacity: 0; }
+  body.revealed .footer-note { animation: fadeUp 1s ease forwards 1.7s; }
+
+  @keyframes fadeUp { from { opacity:0; transform: translateY(18px); } to { opacity:1; transform: translateY(0); } }
+  @keyframes letterIn { to { opacity:1; transform: translateY(0) rotateX(0deg); } }
+  @keyframes rotateCake { from { transform: rotateX(-14deg) rotateY(0deg); } to { transform: rotateX(-14deg) rotateY(360deg); } }
+  @keyframes flicker { from { transform: scale(1) translateY(0); opacity:1; } to { transform: scale(0.9,1.1) translateY(-1px); opacity:0.85; } }
+  @keyframes hintBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+  #music-toggle {
+    position: fixed; top: 14px; left: 16px; z-index: 60;
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 1px solid var(--border-color); background: rgba(13,10,26,0.7);
+    backdrop-filter: blur(4px); color: var(--gold-light);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px; transition: transform 0.2s;
+  }
+  #music-toggle:hover { transform: scale(1.1); }
+  #music-toggle.playing { animation: pulseMusic 1.4s infinite; }
+  @keyframes pulseMusic { 0%,100% { box-shadow: 0 0 0 0 rgba(205,164,94,0.4); } 50% { box-shadow: 0 0 0 8px rgba(205,164,94,0); } }
+</style>
+</head>
+<body>
+
+<!-- Efek Aura Glow di Background -->
+<div class="bg-glow"></div>
+
+<!-- CANVAS 3D UNTUK FIREWORKS THREE.JS -->
+<canvas id="fireworks-canvas"></canvas>
+
+<button id="music-toggle" title="Putar / Matikan Musik" aria-label="Musik">&#9835;</button>
+<div class="theme-switcher">
+  <div class="theme-dot dot-gold" onclick="setTheme('gold')" title="Tema Emas"></div>
+  <div class="theme-dot dot-blue" onclick="setTheme('blue')" title="Tema Biru Perak"></div>
+  <div class="theme-dot dot-pink" onclick="setTheme('pink')" title="Tema Pink Rose"></div>
+  <div class="theme-dot dot-emerald" onclick="setTheme('emerald')" title="Tema Hijau Emerald"></div>
+</div>
+<div id="device-clock">--:--:--</div>
+
+<div id="gate">
+  <div class="gate-eyebrow">Momen Spesial Tiba</div>
+  <div class="gate-title">Pintu kejutan ini akan terbuka otomatis</div>
+
+  <div class="doors" id="doors">
+    <div class="door door-left" id="door-left"></div>
+    <div class="door door-right" id="door-right"></div>
+    <div class="seal" id="seal">🎂</div>
+  </div>
+
+  <div class="countdown" id="countdown">
+    <div class="cd-unit"><div class="cd-num" id="cd-h">00</div><div class="cd-label">Jam</div></div>
+    <div class="cd-unit"><div class="cd-num" id="cd-m">00</div><div class="cd-label">Menit</div></div>
+    <div class="cd-unit"><div class="cd-num" id="cd-s">00</div><div class="cd-label">Detik</div></div>
+  </div>
+  <div class="gate-note">Menyiapkan kejutan istimewa...</div>
+</div>
+
+<div class="frame">
+  <div class="ornament-line"></div>
+  <div class="eyebrow">Hari Istimewa</div>
+
+  <h1 id="heading"></h1>
+
+  <p class="tagline">Selamat memasuki babak baru kehidupan! Semoga tahun ini dipenuhi ide-ide hebat, melodi indah, dan pencapaian bermakna.</p>
+
+  <div class="personal-quote">
+    "Selamat ulang tahun! Semoga setiap detik di usia yang baru ini mendekatkanmu pada impian terbesar yang sedang kamu perjuangkan."."
+    <span class="author">— Refleksi Tahun Ini</span>
+  </div>
+
+  <div class="gallery-container">
+    <div class="gallery-slider" id="gallery-slider">
+      <div class="gallery-track" id="gallery-track">
+        <div class="gallery-slide">
+          <img src="./image/Black and White Minimalist Fashion Photo Collage.png" alt="Moment 1">
+          <div class="gallery-caption">Menikmati setiap alunan nada & proses belajar</div>
+        </div>
+        <div class="gallery-slide">
+          <img src="./image/IMG-20260828-WA0019.jpg" alt="Moment 2">
+          <div class="gallery-caption">Fokus membangun impian & karya baru</div>
+        </div>
+        <div class="gallery-slide">
+          <img src="./image/IMG-20260828-WA0020.jpg" alt="Moment 3">
+          <div class="gallery-caption">Merayakan setiap momen kecil bernilai</div>
+        </div>
+      </div>
+      <button class="gallery-btn prev" id="prev-btn">&#10094;</button>
+      <button class="gallery-btn next" id="next-btn">&#10095;</button>
+    </div>
+    <div class="gallery-dots" id="gallery-dots"></div>
+  </div>
+
+  <div class="cake-stage">
+    <div class="cake">
+      <div class="tier tier-bottom">
+        <div class="face face-front"></div><div class="face face-back"></div>
+        <div class="face face-right"></div><div class="face face-left"></div>
+        <div class="icing"></div>
+      </div>
+      <div class="tier tier-top">
+        <div class="face face-front"></div><div class="face face-back"></div>
+        <div class="face face-right"></div><div class="face face-left"></div>
+        <div class="icing"></div>
+      </div>
+      <div class="candle"><div class="flame" id="flame"></div></div>
+      <div class="candle-hit" id="candle-hit" title="Tap/Klik lilin untuk ditiup"></div>
+    </div>
+    <div class="smoke" id="smoke"></div>
+  </div>
+  <div class="blow-hint" id="blow-hint">✨ Tap / Klik lilinnya untuk ditiup! ✨</div>
+
+  <div class="stats-section">
+    <div class="stats-title">Statistik Perjalanan Hidupmu</div>
+    <div class="stats-row">
+      <div class="stat-chip"><div class="stat-num" id="st-years">0</div><div class="stat-lbl">Tahun</div></div>
+      <div class="stat-chip"><div class="stat-num" id="st-days">0</div><div class="stat-lbl">Hari</div></div>
+      <div class="stat-chip"><div class="stat-num" id="st-hours">0</div><div class="stat-lbl">Jam</div></div>
+      <div class="stat-chip"><div class="stat-num" id="st-mins">0</div><div class="stat-lbl">Menit</div></div>
+      <div class="stat-chip"><div class="stat-num" id="st-secs">0</div><div class="stat-lbl">Detik</div></div>
+    </div>
+  </div>
+
+  <div class="next-bday-section">
+    <div class="stats-title">Menuju Ulang Tahun Berikutnya</div>
+    <div class="countdown">
+      <div class="cd-unit"><div class="cd-num" id="nxt-d">000</div><div class="cd-label">Hari</div></div>
+      <div class="cd-unit"><div class="cd-num" id="nxt-h">00</div><div class="cd-label">Jam</div></div>
+      <div class="cd-unit"><div class="cd-num" id="nxt-m">00</div><div class="cd-label">Menit</div></div>
+      <div class="cd-unit"><div class="cd-num" id="nxt-s">00</div><div class="cd-label">Detik</div></div>
+    </div>
+  </div>
+
+  <div class="guestbook">
+    <div class="guestbook-title">Buku Tamu & Ucapan</div>
+    <div class="gb-form">
+      <input type="text" id="gb-name" placeholder="Nama kamu" maxlength="40">
+      <textarea id="gb-msg" placeholder="Tuliskan doa dan harapan terbaikmu..." maxlength="240"></textarea>
+      <button class="gb-submit" id="gb-submit">Kirim Ucapan</button>
+    </div>
+    <div class="gb-list" id="gb-list">
+      <div class="gb-empty">Belum ada ucapan tersimpan. Jadilah yang pertama!</div>
+    </div>
+  </div>
+
+  <div class="footer-note">Dibuat khusus dengan 💛 untuk merayakan harimu</div>
+</div>
+
+<script>
+  const NAME = "M. Rifaldi";
+  const BIRTH_DATE = "2005-08-29";
+
+  function setTheme(theme) {
+    document.body.className = document.body.className.replace(/theme-\w+/g, '');
+    if (theme !== 'gold') {
+      document.body.classList.add('theme-' + theme);
+    }
+  }
+
+  const heading = document.getElementById('heading');
+  const line1 = "Selamat Ulang Tahun,";
+  let delay = 0.2;
+  const frag = document.createDocumentFragment();
+
+  line1.split('').forEach(ch => {
+    const s = document.createElement('span');
+    s.className = 'letter';
+    s.textContent = ch === ' ' ? ' ' : ch;
+    s.style.animationDelay = delay + 's';
+    delay += 0.025;
+    frag.appendChild(s);
+  });
+  frag.appendChild(document.createElement('br'));
+  const nameWrap = document.createElement('span');
+  nameWrap.className = 'name';
+  NAME.split('').forEach(ch => {
+    const s = document.createElement('span');
+    s.className = 'letter';
+    s.textContent = ch === ' ' ? ' ' : ch;
+    s.style.animationDelay = delay + 's';
+    delay += 0.04;
+    nameWrap.appendChild(s);
+  });
+  frag.appendChild(nameWrap);
+  heading.appendChild(frag);
+
+  const deviceClockEl = document.getElementById('device-clock');
+  const pad = n => String(n).padStart(2, '0');
+  function updateDeviceClock() {
+    const n = new Date();
+    deviceClockEl.textContent = pad(n.getHours()) + ':' + pad(n.getMinutes()) + ':' + pad(n.getSeconds());
+  }
+  setInterval(updateDeviceClock, 1000); updateDeviceClock();
+
+  const targetGateTime = Date.now() + 3000;
+  function updateGateCD() {
+    const diff = targetGateTime - Date.now();
+    if (diff <= 0) {
+      document.getElementById('cd-h').textContent = '00';
+      document.getElementById('cd-m').textContent = '00';
+      document.getElementById('cd-s').textContent = '00';
+      clearInterval(gateTimer);
+      openGate();
+      return;
+    }
+    const sec = Math.floor(diff / 1000);
+    document.getElementById('cd-h').textContent = pad(Math.floor(sec / 3600));
+    document.getElementById('cd-m').textContent = pad(Math.floor((sec % 3600) / 60));
+    document.getElementById('cd-s').textContent = pad(sec % 60);
+  }
+  const gateTimer = setInterval(updateGateCD, 1000); updateGateCD();
+
+  function openGate() {
+    document.getElementById('door-left').classList.add('open');
+    document.getElementById('door-right').classList.add('open');
+    document.getElementById('seal').classList.add('fade');
+    setTimeout(() => {
+      document.getElementById('gate').classList.add('hide');
+      document.body.classList.add('revealed');
+      triggerMultipleFireworks();
+      setTimeout(() => { document.getElementById('gate').style.display = 'none'; }, 900);
+    }, 1000);
+  }
+
+  // ================= SISTEM KEMBANG API 3D REALISTIS (THREE.JS) =================
+  const canvas3D = document.getElementById('fireworks-canvas');
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({ canvas: canvas3D, alpha: true, antialias: true });
+
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  camera.position.z = 120;
+
+  const fireworks3D = [];
+
+  class Firework3D {
+    constructor(targetX, targetY) {
+      if (targetX !== undefined && targetY !== undefined) {
+        this.targetX = (targetX / window.innerWidth) * 160 - 80;
+        this.targetY = -(targetY / window.innerHeight) * 120 + 60;
+      } else {
+        this.targetX = (Math.random() - 0.5) * 120;
+        this.targetY = 10 + Math.random() * 45;
+      }
+
+      this.startX = this.targetX + (Math.random() - 0.5) * 10;
+      this.startY = -70;
+      this.startZ = (Math.random() - 0.5) * 40;
+
+      this.currentPos = new THREE.Vector3(this.startX, this.startY, this.startZ);
+      
+      const hue = Math.random() * 360;
+      this.color = new THREE.Color(`hsl(${hue}, 100%, 65%)`);
+
+      this.exploded = false;
+      this.speed = 1.8 + Math.random() * 0.8;
+
+      const rocketGeo = new THREE.BufferGeometry();
+      rocketGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([this.startX, this.startY, this.startZ]), 3));
+      
+      const rocketMat = new THREE.PointsMaterial({
+        size: 3.0,
+        color: new THREE.Color('#fff2c2'),
+        transparent: true,
+        opacity: 0.9,
+        blending: THREE.AdditiveBlending
+      });
+
+      this.rocket = new THREE.Points(rocketGeo, rocketMat);
+      scene.add(this.rocket);
+    }
+
+    explode() {
+      scene.remove(this.rocket);
+      this.rocket.geometry.dispose();
+      this.rocket.material.dispose();
+
+      this.particleCount = 280 + Math.floor(Math.random() * 120);
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(this.particleCount * 3);
+      this.velocities = [];
+
+      for (let i = 0; i < this.particleCount; i++) {
+        positions[i * 3] = this.currentPos.x;
+        positions[i * 3 + 1] = this.currentPos.y;
+        positions[i * 3 + 2] = this.currentPos.z;
+
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos((Math.random() * 2) - 1);
+        const speed = 0.9 + Math.random() * 1.5;
+
+        this.velocities.push({
+          x: speed * Math.sin(phi) * Math.cos(theta),
+          y: speed * Math.sin(phi) * Math.sin(theta),
+          z: speed * Math.cos(phi)
+        });
+      }
+
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+      const material = new THREE.PointsMaterial({
+        size: 2.2,
+        color: this.color,
+        transparent: true,
+        opacity: 1,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+
+      this.particles = new THREE.Points(geometry, material);
+      scene.add(this.particles);
+
+      this.alpha = 1;
+      this.decay = 0.009 + Math.random() * 0.006;
+    }
+
+    update() {
+      if (!this.exploded) {
+        this.currentPos.y += this.speed;
+        this.currentPos.x += (this.targetX - this.startX) * 0.02;
+
+        const posAttr = this.rocket.geometry.attributes.position;
+        posAttr.array[0] = this.currentPos.x;
+        posAttr.array[1] = this.currentPos.y;
+        posAttr.array[2] = this.currentPos.z;
+        posAttr.needsUpdate = true;
+
+        if (this.currentPos.y >= this.targetY) {
+            this.exploded = true;
+            this.explode();
+        }
+      } else {
+        const positions = this.particles.geometry.attributes.position.array;
+        for (let i = 0; i < this.particleCount; i++) {
+          positions[i * 3] += this.velocities[i].x;
+          positions[i * 3 + 1] += this.velocities[i].y;
+          positions[i * 3 + 2] += this.velocities[i].z;
+
+          // Efek gravitasi dan gesekan udara
+          this.velocities[i].y -= 0.025;
+          this.velocities[i].x *= 0.98;
+          this.velocities[i].y *= 0.98;
+          this.velocities[i].z *= 0.98;
+        }
+        this.particles.geometry.attributes.position.needsUpdate = true;
+
+        this.alpha -= this.decay;
+        this.particles.material.opacity = this.alpha;
+
+        if (this.alpha <= 0) {
+          scene.remove(this.particles);
+          this.particles.geometry.dispose();
+          this.particles.material.dispose();
+          return false;
+        }
+      }
+      return true;
+    }
+  }
+
+  function triggerMultipleFireworks(x, y) {
+    if (x !== undefined && y !== undefined) {
+      fireworks3D.push(new Firework3D(x, y));
+      setTimeout(() => fireworks3D.push(new Firework3D(x + 30, y - 20)), 150);
+      setTimeout(() => fireworks3D.push(new Firework3D(x - 30, y - 20)), 300);
+    } else {
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+          fireworks3D.push(new Firework3D());
+        }, i * 300);
+      }
+    }
+  }
+
+  // Klik di mana saja di layar (setelah pintu terbuka) untuk memicu kembang api tambahan
+  window.addEventListener('click', (e) => {
+    if (document.body.classList.contains('revealed') && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+      triggerMultipleFireworks(e.clientX, e.clientY);
+    }
+  });
+
+  function animateFireworks() {
+    requestAnimationFrame(animateFireworks);
+    for (let i = fireworks3D.length - 1; i >= 0; i--) {
+      if (!fireworks3D[i].update()) {
+        fireworks3D.splice(i, 1);
+      }
+    }
+    renderer.render(scene, camera);
+  }
+  animateFireworks();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // ================= GALERI FOTO INTERAKTIF (SLIDER) =================
+  const track = document.getElementById('gallery-track');
+  const slides = Array.from(track.children);
+  const nextBtn = document.getElementById('next-btn');
+  const prevBtn = document.getElementById('prev-btn');
+  const dotsContainer = document.getElementById('gallery-dots');
+  let currentIndex = 0;
+
+  slides.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.addEventListener('click', () => moveToSlide(i));
+    dotsContainer.appendChild(dot);
+  });
+  const dots = Array.from(dotsContainer.children);
+
+  function updateSlidePosition() {
+    track.style.transform = 'translateX(-' + (currentIndex * 100) + '%)';
+    dots.forEach((dot, i) => dot.classList.toggle('active', i === currentIndex));
+  }
+
+  function moveToSlide(index) {
+    currentIndex = index;
+    updateSlidePosition();
+  }
+
+  nextBtn.addEventListener('click', () => {
+    currentIndex = (currentIndex + 1) % slides.length;
+    updateSlidePosition();
+  });
+
+  prevBtn.addEventListener('click', () => {
+    currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+    updateSlidePosition();
+  });
+
+  // Touch Support untuk Mobile (Swipe Galeri)
+  let touchStartX = 0;
+  track.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+  track.addEventListener('touchend', e => {
+    let diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        currentIndex = (currentIndex + 1) % slides.length;
+      } else {
+        currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+      }
+      updateSlidePosition();
+    }
+  });
+
+  // ================= INTERAKSI TIUP LILIN =================
+  let candleBlown = false;
+  document.getElementById('candle-hit').addEventListener('click', () => {
+    if (candleBlown) return;
+    candleBlown = true;
+    document.getElementById('flame').classList.add('blown');
+    const smoke = document.getElementById('smoke');
+    smoke.classList.add('rise');
+    document.getElementById('blow-hint').textContent = "🎉 Yeay! Lilin berhasil ditiup & doa-doamu terkabul! 🎉";
+    
+    // Memicu kembang api di atas kue
+    triggerMultipleFireworks(window.innerWidth / 2, window.innerHeight * 0.45);
+  });
+
+  // ================= STATISTIK & COUNTDOWN ULANG TAHUN =================
+  const birth = new Date(BIRTH_DATE).getTime();
+
+  function updateStats() {
+    const now = Date.now();
+    const diff = now - birth;
+
+    const secs = Math.floor(diff / 1000);
+    const mins = Math.floor(secs / 60);
+    const hours = Math.floor(mins / 60);
+    const days = Math.floor(hours / 24);
+    const years = Math.floor(days / 365.25);
+
+    document.getElementById('st-years').textContent = years;
+    document.getElementById('st-days').textContent = days.toLocaleString();
+    document.getElementById('st-hours').textContent = hours.toLocaleString();
+    document.getElementById('st-mins').textContent = mins.toLocaleString();
+    document.getElementById('st-secs').textContent = secs.toLocaleString();
+
+    // Hitung menuju ulang tahun berikutnya
+    const currentYear = new Date().getFullYear();
+    let nextBday = new Date(currentYear, new Date(BIRTH_DATE).getMonth(), new Date(BIRTH_DATE).getDate()).getTime();
+    if (nextBday < now) {
+      nextBday = new Date(currentYear + 1, new Date(BIRTH_DATE).getMonth(), new Date(BIRTH_DATE).getDate()).getTime();
+    }
+    const diffNxt = nextBday - now;
+    const nxtSecs = Math.floor(diffNxt / 1000);
+    const nxtDays = Math.floor(nxtSecs / (3600 * 24));
+    const nxtHours = Math.floor((nxtSecs % (3600 * 24)) / 3600);
+    const nxtMins = Math.floor((nxtSecs % 3600) / 60);
+    const nxtSec = nxtSecs % 60;
+
+    document.getElementById('nxt-d').textContent = pad(nxtDays);
+    document.getElementById('nxt-h').textContent = pad(nxtHours);
+    document.getElementById('nxt-m').textContent = pad(nxtMins);
+    document.getElementById('nxt-s').textContent = pad(nxtSec);
+  }
+  setInterval(updateStats, 1000); updateStats();
+
+  // ================= BUKU TAMU (LOCALSTORAGE) =================
+  const gbListEl = document.getElementById('gb-list');
+  const gbNameInput = document.getElementById('gb-name');
+  const gbMsgInput = document.getElementById('gb-msg');
+  const gbSubmitBtn = document.getElementById('gb-submit');
+
+  function loadGuestbook() {
+    const data = JSON.parse(localStorage.getItem('bday_guestbook_' + NAME)) || [];
+    if (data.length === 0) {
+      gbListEl.innerHTML = '<div class="gb-empty">Belum ada ucapan tersimpan. Jadilah yang pertama!</div>';
+      return;
+    }
+    gbListEl.innerHTML = '';
+    data.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'gb-item';
+      div.innerHTML = `
+        <div class="gb-item-name"><span>${escapeHtml(item.name)}</span><span class="gb-item-time">${escapeHtml(item.time)}</span></div>
+        <div class="gb-item-msg">${escapeHtml(item.msg)}</div>
+      `;
+      gbListEl.appendChild(div);
+    });
+  }
+
+  gbSubmitBtn.addEventListener('click', () => {
+    const name = gbNameInput.value.trim();
+    const msg = gbMsgInput.value.trim();
+    if (!name || !msg) {
+      alert('Mohon isi nama dan pesan ucapan terlebih dahulu!');
+      return;
+    }
+
+    const now = new Date();
+    const timeStr = pad(now.getDate()) + '/' + pad(now.getMonth() + 1) + '/' + now.getFullYear() + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+
+    const data = JSON.parse(localStorage.getItem('bday_guestbook_' + NAME)) || [];
+    data.unshift({ name, msg, time: timeStr });
+    localStorage.setItem('bday_guestbook_' + NAME, JSON.stringify(data));
+
+    gbNameInput.value = '';
+    gbMsgInput.value = '';
+    loadGuestbook();
+  });
+
+  function escapeHtml(text) {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  }
+
+  loadGuestbook();
+
+  // ================= AUDIO / MUSIK LATAR =================
+  let audioCtx = null;
+  let isPlayingMusic = false;
+  let musicInterval = null;
+
+  const musicToggle = document.getElementById('music-toggle');
+
+  function playMusicBoxNote() {
+    if (!audioCtx) return;
+    const notes = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50]; 
+    const freq = notes[Math.floor(Math.random() * notes.length)];
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 2.0);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 2.0);
+  }
+
+  musicToggle.addEventListener('click', () => {
+    if (!isPlayingMusic) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      isPlayingMusic = true;
+      musicToggle.classList.add('playing');
+      musicToggle.title = "Matikan Musik";
+      musicInterval = setInterval(playMusicBoxNote, 600);
+      playMusicBoxNote();
+    } else {
+      if (audioCtx) {
+        audioCtx.close();
+        audioCtx = null;
+      }
+      isPlayingMusic = false;
+      musicToggle.classList.remove('playing');
+      musicToggle.title = "Putar Musik";
+      clearInterval(musicInterval);
+    }
+  });
+</script>
+</body>
+</html>
